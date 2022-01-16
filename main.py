@@ -31,22 +31,21 @@ GAME_OVER_FONT_2= pygame.font.SysFont("comicsans", 60)
 FPS= 60
 clock= pygame.time.Clock()
 
-gravity = Vector2(0,10)
-
 GAME_OVER_EVENT= pygame.USEREVENT + 1
+    #GAME STATE
 game_over= False
 level_beginning_state= False
 finished= False
+timeout= False
 
-
+#Initialize game variables
+gravity = Vector2(0,10)
 movers= []
-
 shooter= Shooter(Vector2(0,0),25,0.6)
 chain_bullets= []
 
 spike_length= 30
 time_bar_length= 20
-
 spike= pygame.Rect(0,time_bar_length,WIDTH, spike_length)
 time_bar= pygame.Rect(0,0,1,time_bar_length)
 
@@ -75,6 +74,10 @@ def draw():
         game_over_text2= GAME_OVER_FONT_2.render("press 'r' to restart", 1, WHITE)
         screen.blit(game_over_text2, (WIDTH/2 - game_over_text2.get_width()/2 ,HEIGHT/2 + 60))
 
+        if timeout:
+            game_over_text_3= GAME_OVER_FONT_2.render("ran out of time!", 1, WHITE)
+            screen.blit(game_over_text_3, (WIDTH/2 - game_over_text_3.get_width()/2 ,HEIGHT/2 + 120))
+
     if level_beginning_state:
         level_begining_text_1= GAME_OVER_FONT_1.render("LEVEL: "+ str(level_manager.current_level), 1, WHITE)
         screen.blit(level_begining_text_1, (WIDTH/2 - level_begining_text_1.get_width()/2 ,HEIGHT/2 - level_begining_text_1.get_height()/2))
@@ -90,7 +93,7 @@ def draw():
 
 def update(): 
     global time_bar
-
+    global timeout
     update_chains()
     update_balls()
 
@@ -99,8 +102,6 @@ def update():
 
     check_game_over()
     check_chain_collisions()
-
-
 
     for mover in movers:
         
@@ -118,7 +119,13 @@ def update():
             mover.position.x = mover.mass
 
     #update time bar
-    time_bar.width= WIDTH* level.elapsed()
+    if not game_over:
+        time_bar.width= WIDTH* level.elapsed()
+
+    if level.lost() and not game_over:
+        timeout= True
+        pygame.event.post(pygame.event.Event(GAME_OVER_EVENT))
+        
 
         
 def check_shooter_bounds():
@@ -291,6 +298,7 @@ while 1:
     if game_over and keys_pressed[K_r]:
         init_game()
         game_over= False
+        timeout= False
     
     if not level_beginning_state:
         update()
