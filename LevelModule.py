@@ -17,9 +17,14 @@ class Level:
     def start(self):
         self.start_time= time.time()
 
+    #returns a ratio showing how much of the level is completed
+    def elapsed(self):
+        return (time.time()- self.start_time)/ self.duration
 
-    def remaining(self):
-        return self.duration -(time.time()- self.start_time)
+    def lost(self):
+        return self.elapsed()>1
+
+    
 
 class LevelManager:
      
@@ -69,7 +74,6 @@ class LevelManager:
             return None
         else:
             level= self.levels[self.current_level]
-            level.start()
             self.current_level += 1
             return level
 

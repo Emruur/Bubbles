@@ -17,6 +17,7 @@ WHITE = (230, 230,200)
 RED= (200,30,30)
 BLUE= (40,40,100)
 GREEN= (40,80,60)
+YELLOW= (40,150,150)
 
 WIDTH,HEIGHT= 1000, 600
 screen = pygame.display.set_mode((WIDTH,HEIGHT))
@@ -44,16 +45,24 @@ shooter= Shooter(Vector2(0,0),25,0.6)
 chain_bullets= []
 
 spike_length= 30
-spike= pygame.Rect(0,0,WIDTH, spike_length)
+time_bar_length= 20
+
+spike= pygame.Rect(0,time_bar_length,WIDTH, spike_length)
+time_bar= pygame.Rect(0,0,1,time_bar_length)
 
 level_manager= LevelManager(WIDTH,HEIGHT)
+level= None
 
 def draw():
     screen.fill(GREEN)
+    #draw time bar
+    pygame.draw.rect(screen, YELLOW, time_bar)
     
     for chain in chain_bullets:
         pygame.draw.line(screen,RED,chain.bottom_position,chain.top_position, 3)
+
     pygame.draw.circle(screen, WHITE, shooter.position, shooter.radius)
+
     for mover in movers:
         pygame.draw.circle(screen,BLACK,mover.position, mover.mass)
 
@@ -80,14 +89,18 @@ def draw():
     pygame.display.update()
 
 def update(): 
+    global time_bar
+
     update_chains()
     update_balls()
 
     check_shooter_bounds()
     check_chain_bounds()
 
-    #check_game_over()
+    check_game_over()
     check_chain_collisions()
+
+
 
     for mover in movers:
         
@@ -103,6 +116,10 @@ def update():
         elif mover.position.x < mover.mass:
             mover.velocity.x *= -1
             mover.position.x = mover.mass
+
+    #update time bar
+    time_bar.width= WIDTH* level.elapsed()
+
         
 def check_shooter_bounds():
     if shooter.position.x > WIDTH: 
@@ -206,7 +223,9 @@ def split_spike(mover):
         movers.append(m)
 
 def init_game():
+    global level
     global level_beginning_state
+    global time_bar
     level_manager.reset()
     level= level_manager.load_level()
     shooter.position= copy.deepcopy(level.shooter_location)
@@ -216,12 +235,18 @@ def init_game():
     for mover in level.movers:
         movers.append(copy.deepcopy(mover))
 
+    time_bar.width= 1
+
     level_beginning_state= True
 
 def load_next_level():
     global finished
     global level_beginning_state
+    global level
+    global time_bar
+    
     level= level_manager.load_level()
+    time_bar.width= 1
 
     if level:
         shooter.position= copy.deepcopy(level.shooter_location)
@@ -254,6 +279,7 @@ while 1:
                     if len(chain_bullets)<2:
                         chain_bullets.append(ChainBullet(copy.deepcopy(shooter.position)))
             else:
+                level.start()
                 level_beginning_state= False
 
 
