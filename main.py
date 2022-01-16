@@ -1,7 +1,8 @@
-from types import new_class
+from LevelModule import LevelManager, Level
 import pygame
 from pygame import Vector2
 from pygame.constants import K_LEFT, K_RIGHT, K_r
+
 
 import copy
 import time
@@ -33,16 +34,19 @@ gravity = Vector2(0,10)
 
 GAME_OVER_EVENT= pygame.USEREVENT + 1
 game_over= False
+level_beginning_state= False
+finished= False
 
-mover5= Mover(140, Vector2( WIDTH/2, 300))
 
-movers= [mover5]
+movers= []
 
-shooter= Shooter(Vector2(0, HEIGHT),25,0.5)
+shooter= Shooter(Vector2(0,0),25,0.6)
 chain_bullets= []
 
 spike_length= 30
 spike= pygame.Rect(0,0,WIDTH, spike_length)
+
+level_manager= LevelManager(WIDTH,HEIGHT)
 
 def draw():
     screen.fill(GREEN)
@@ -62,6 +66,17 @@ def draw():
         game_over_text2= GAME_OVER_FONT_2.render("press 'r' to restart", 1, WHITE)
         screen.blit(game_over_text2, (WIDTH/2 - game_over_text2.get_width()/2 ,HEIGHT/2 + 60))
 
+    if level_beginning_state:
+        level_begining_text_1= GAME_OVER_FONT_1.render("LEVEL: "+ str(level_manager.current_level), 1, WHITE)
+        screen.blit(level_begining_text_1, (WIDTH/2 - level_begining_text_1.get_width()/2 ,HEIGHT/2 - level_begining_text_1.get_height()/2))
+
+        level_begining_text_2= GAME_OVER_FONT_2.render("press any key to start", 1, WHITE)
+        screen.blit(level_begining_text_2, (WIDTH/2 - level_begining_text_2.get_width()/2 ,HEIGHT/2 + 60))
+    
+    if finished:
+        finished_text= GAME_OVER_FONT_2.render("More levels are going to be added ", 1, WHITE)
+        screen.blit(finished_text, (WIDTH/2 - finished_text.get_width()/2 ,HEIGHT/2 - finished_text.get_height()/2))
+
     pygame.display.update()
 
 def update(): 
@@ -71,7 +86,7 @@ def update():
     check_shooter_bounds()
     check_chain_bounds()
 
-    check_game_over()
+    #check_game_over()
     check_chain_collisions()
 
     for mover in movers:
@@ -190,18 +205,43 @@ def split_spike(mover):
     for m in added_movers:
         movers.append(m)
 
-def reset_game():
-    shooter.position= Vector2(WIDTH/2, HEIGHT)
-    movers.clear()
-    chain_bullets.clear()
-    m=Mover(140, Vector2( WIDTH/2, 300))
-    m.velocity *= 0
-    movers.append(m)
-    
-        
+def init_game():
+    global level_beginning_state
+    level_manager.reset()
+    level= level_manager.load_level()
+    shooter.position= copy.deepcopy(level.shooter_location)
 
+    chain_bullets.clear()
+    movers.clear()
+    for mover in level.movers:
+        movers.append(copy.deepcopy(mover))
+
+    level_beginning_state= True
+
+def load_next_level():
+    global finished
+    global level_beginning_state
+    level= level_manager.load_level()
+
+    if level:
+        shooter.position= copy.deepcopy(level.shooter_location)
+        chain_bullets.clear()
+        movers.clear()
+
+        for mover in level.movers:
+            movers.append(copy.deepcopy(mover))
+
+        level_beginning_state= True
+    else:
+        finished= True
+
+
+init_game()
 while 1:   
     dt= clock.tick(FPS)
+    if len(movers)<= 0:
+        load_next_level()
+        
     for event in pygame.event.get():
 
         if event.type == pygame.QUIT:
@@ -209,21 +249,26 @@ while 1:
         if event.type == GAME_OVER_EVENT:
             game_over= True
         if event.type == pygame.KEYDOWN:
-            if event.key== pygame.K_SPACE and not game_over:
-                if len(chain_bullets)<2:
-                    chain_bullets.append(ChainBullet(copy.deepcopy(shooter.position)))
+            if not level_beginning_state:
+                if event.key== pygame.K_SPACE and not game_over:
+                    if len(chain_bullets)<2:
+                        chain_bullets.append(ChainBullet(copy.deepcopy(shooter.position)))
+            else:
+                level_beginning_state= False
+
 
     keys_pressed = pygame.key.get_pressed()
-    if keys_pressed[K_RIGHT] and not game_over:
+    if keys_pressed[K_RIGHT] and not game_over and not level_beginning_state:
         shooter.move_right(dt)
-    if keys_pressed[K_LEFT] and not game_over:
+    if keys_pressed[K_LEFT] and not game_over and not level_beginning_state:
         shooter.move_left(dt)
     if game_over and keys_pressed[K_r]:
-        reset_game()
+        init_game()
         game_over= False
     
-    
-    update()
+    if not level_beginning_state:
+        update()
+
     draw()
 
     
