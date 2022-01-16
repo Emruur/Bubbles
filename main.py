@@ -271,7 +271,7 @@ def load_next_level():
 init_game()
 while 1:   
     dt= clock.tick(FPS)
-    if len(movers)<= 0:
+    if len(movers)<= 0 and not game_over:
         load_next_level()
         
     for event in pygame.event.get():
