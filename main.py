@@ -1,7 +1,7 @@
 from types import new_class
 import pygame
 from pygame import Vector2
-from pygame.constants import K_LEFT, K_RIGHT
+from pygame.constants import K_LEFT, K_RIGHT, K_r
 
 import copy
 import time
@@ -22,15 +22,19 @@ screen = pygame.display.set_mode((WIDTH,HEIGHT))
   
 pygame.display.set_caption('Bouncing ball')
 
+pygame.font.init()
+GAME_OVER_FONT_1= pygame.font.SysFont("comicsans", 120)
+GAME_OVER_FONT_2= pygame.font.SysFont("comicsans", 60)
+
 FPS= 60
 clock= pygame.time.Clock()
 
 gravity = Vector2(0,10)
 
-GAME_OVER= pygame.USEREVENT + 1
+GAME_OVER_EVENT= pygame.USEREVENT + 1
+game_over= False
 
-mover5= Mover(140, Vector2( WIDTH/2, 200))
-
+mover5= Mover(140, Vector2( WIDTH/2, 300))
 
 movers= [mover5]
 
@@ -50,6 +54,14 @@ def draw():
         pygame.draw.circle(screen,BLACK,mover.position, mover.mass)
 
     pygame.draw.rect(screen ,BLUE, spike)
+
+    if game_over:
+        game_over_text= GAME_OVER_FONT_1.render("GAME OVER", 1, WHITE)
+        screen.blit(game_over_text, (WIDTH/2 - game_over_text.get_width()/2 ,HEIGHT/2 - game_over_text.get_height()/2))
+
+        game_over_text2= GAME_OVER_FONT_2.render("press 'r' to restart", 1, WHITE)
+        screen.blit(game_over_text2, (WIDTH/2 - game_over_text2.get_width()/2 ,HEIGHT/2 + 60))
+
     pygame.display.update()
 
 def update(): 
@@ -139,7 +151,7 @@ def check_game_over():
     for mover in movers:
         distance_vector= mover.position - shooter.position
         if distance_vector.magnitude() < shooter.radius + mover.mass:
-            pygame.event.post(pygame.event.Event(GAME_OVER))
+            pygame.event.post(pygame.event.Event(GAME_OVER_EVENT))
 
 def split_ball(mover,chain):
     if mover.mass < 30:
@@ -171,12 +183,21 @@ def split_spike(mover):
 
         added_movers.append(m1)        
         added_movers.append(m2)       
-        removed_movers.remove(mover) 
+        removed_movers.append(mover) 
 
     movers[:]= [x for x in movers if not x in removed_movers]
 
     for m in added_movers:
         movers.append(m)
+
+def reset_game():
+    shooter.position= Vector2(WIDTH/2, HEIGHT)
+    movers.clear()
+    chain_bullets.clear()
+    m=Mover(140, Vector2( WIDTH/2, 300))
+    m.velocity *= 0
+    movers.append(m)
+    
         
 
 while 1:   
@@ -185,18 +206,22 @@ while 1:
 
         if event.type == pygame.QUIT:
             pygame.quit()
-        if event.type == GAME_OVER:
-            pygame.quit()
+        if event.type == GAME_OVER_EVENT:
+            game_over= True
         if event.type == pygame.KEYDOWN:
-            if event.key== pygame.K_SPACE:
+            if event.key== pygame.K_SPACE and not game_over:
                 if len(chain_bullets)<2:
                     chain_bullets.append(ChainBullet(copy.deepcopy(shooter.position)))
 
     keys_pressed = pygame.key.get_pressed()
-    if keys_pressed[K_RIGHT]:
+    if keys_pressed[K_RIGHT] and not game_over:
         shooter.move_right(dt)
-    if keys_pressed[K_LEFT]:
+    if keys_pressed[K_LEFT] and not game_over:
         shooter.move_left(dt)
+    if game_over and keys_pressed[K_r]:
+        reset_game()
+        game_over= False
+    
     
     update()
     draw()
