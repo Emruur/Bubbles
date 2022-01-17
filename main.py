@@ -79,8 +79,9 @@ CHAIN=  pygame.transform.scale(
 
 pop= pygame.mixer.Sound('assets/pop2.wav')
 pop2= pygame.mixer.Sound('assets/pop.wav')
-game_over_sound= pygame.mixer.Sound('assets/game_over.wav')
 game_over_sound2= pygame.mixer.Sound('assets/game_over2.wav')
+chain_sound= pygame.mixer.Sound('assets/chain.wav')
+bounce= pygame.mixer.Sound('assets/bounce.wav')
 
 def draw():
     screen.blit(background,(0,0))
@@ -148,6 +149,7 @@ def update():
         if mover.position.y > HEIGHT- mover.mass:
             mover.velocity.y *= -1
             mover.position.y=  HEIGHT- mover.mass
+            bounce.play()
         elif mover.position.y < mover.mass + spike_length:
             split_spike(mover)
         
@@ -180,6 +182,9 @@ def check_chain_bounds():
     for chain in chain_bullets:
         if chain.top_position.y<0 and not chain.anchored:
             chain.anchor(time.time())
+            chain_sound.stop()
+        
+
 
 def update_balls():
     for mover in movers:
@@ -214,6 +219,7 @@ def check_chain_collisions():
                     pygame.mixer.Sound.play(pop2)
                 removed_movers.append(mover)
                 removed_chains.append(chain)
+                chain_sound.stop()
                 
             elif abs(chain.top_position.x- mover.position.x)< mover.mass:
                 if chain.top_position.y < mover.position.y:
@@ -226,6 +232,7 @@ def check_chain_collisions():
                         pygame.mixer.Sound.play(pop2)
                     removed_movers.append(mover)
                     removed_chains.append(chain)
+                    chain_sound.stop()
 
     
     chain_bullets[:]= [x for x in chain_bullets if not x in removed_chains]
@@ -239,7 +246,7 @@ def check_game_over():
     for mover in movers:
         distance_vector= mover.position - shooter.position
         if distance_vector.magnitude() < shooter.radius + mover.mass and not game_over:
-            pygame.mixer.Sound.play(game_over_sound)
+            pygame.mixer.Sound.play(game_over_sound2)
             pygame.event.post(pygame.event.Event(GAME_OVER_EVENT))
 
 def split_ball(mover,chain):
@@ -336,6 +343,7 @@ while 1:
                 if event.key== pygame.K_SPACE and not game_over:
                     if len(chain_bullets)<2:
                         chain_bullets.append(ChainBullet(copy.deepcopy(shooter.position)))
+                        chain_sound.play()
             else:
                 level.start()
                 level_beginning_state= False

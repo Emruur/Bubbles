@@ -3,7 +3,7 @@ import copy
 
 class ChainBullet:
 
-    def __init__(self, bottom_position,mass= 25, top_velocity= Vector2(0,-13)) -> None:
+    def __init__(self, bottom_position,mass= 30, top_velocity= Vector2(0,-13)) -> None:
         self.bottom_position = bottom_position
         self.top_velocity= top_velocity
         self.top_position= copy.deepcopy(bottom_position)
