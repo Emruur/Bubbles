@@ -10,6 +10,7 @@ from ChainBullet import ChainBullet
 from LevelModule import Level, LevelManager
 from Mover import Mover
 from Shooter import Shooter
+from ParticleSystem import ParticleManager, Particles
 
 BLACK = (10, 10, 30)
 GRAY = (80, 80, 100)
@@ -64,6 +65,8 @@ tb_back= pygame.Rect(0,0,WIDTH,time_bar_length)
 level_manager= LevelManager(WIDTH,HEIGHT,shooter.radius)
 level= None
 
+particle_manager= ParticleManager()
+
 SPIKE= pygame.transform.scale(
     pygame.image.load(os.path.join("assets","spike2.png")),(spike_length*2, spike_length*2)
 )
@@ -85,6 +88,9 @@ bounce= pygame.mixer.Sound('assets/bounce.wav')
 
 def draw():
     screen.blit(background,(0,0))
+
+    draw_particles()
+
     #draw time bar
     pygame.draw.rect(screen,GRAY,tb_back)
     pygame.draw.rect(screen, YELLOW, time_bar)
@@ -132,11 +138,17 @@ def draw():
 
     pygame.display.update()
 
+def draw_particles():
+    for particles in particle_manager.particle_systems:
+        for particle in particles.particles:
+            pygame.draw.circle(screen,GRAY,particle.position,particle.mass,)
+
 def update(): 
     global time_bar
     global timeout
     update_chains()
     update_balls()
+    update_particles()
 
     check_shooter_bounds()
     check_chain_bounds()
@@ -198,6 +210,14 @@ def update_chains():
         if not (chain.anchored and time.time() - chain.anchored_in > chain.anchor_duration):
             chains.append(chain)
     chain_bullets= chains
+def update_particles():
+    for particles in particle_manager.particle_systems:
+        if particles.disappeared():
+            particle_manager.particle_systems.remove(particles)
+        else:
+            for particle in particles.particles:
+                particle.applyForce(gravity/2)
+                particle.update()
 
 def check_chain_collisions():
     global chain_bullets
@@ -216,6 +236,9 @@ def check_chain_collisions():
                     added_movers.append(balls[0])
                     added_movers.append(balls[1])
                 else:
+                    #add particles 
+                    particles= Particles(2,mover.position, mover.momentum()+ chain.momentum())
+                    particle_manager.add_particles(particles)
                     pygame.mixer.Sound.play(pop2)
                 removed_movers.append(mover)
                 removed_chains.append(chain)
@@ -229,6 +252,9 @@ def check_chain_collisions():
                         added_movers.append(balls[0])
                         added_movers.append(balls[1])
                     else:
+                        #add particles 
+                        particles= Particles(2,mover.position,mover.momentum()+ chain.momentum())
+                        particle_manager.add_particles(particles)
                         pygame.mixer.Sound.play(pop2)
                     removed_movers.append(mover)
                     removed_chains.append(chain)
@@ -361,6 +387,8 @@ while 1:
     
     if not level_beginning_state:
         update()
+    else:
+        update_particles()
 
     draw()
 
