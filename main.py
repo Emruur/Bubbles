@@ -56,7 +56,7 @@ movers= []
 shooter= Shooter(Vector2(0,0),30,0.6)
 chain_bullets= []
 
-spike_length= 40
+spike_length= 50
 time_bar_length= 20
 spike= pygame.Rect(0,time_bar_length,WIDTH, spike_length)
 time_bar= pygame.Rect(0,0,1,time_bar_length)
@@ -66,6 +66,9 @@ level_manager= LevelManager(WIDTH,HEIGHT,shooter.radius)
 level= None
 
 particle_manager= ParticleManager()
+
+#Avoid balls from stopping ( avoid automatic lose for the player)
+MIN_BOUNCE_SPEED= 5
 
 SPIKE= pygame.transform.scale(
     pygame.image.load(os.path.join("assets","spike2.png")),(spike_length*2, spike_length*2)
@@ -140,8 +143,11 @@ def draw():
 
 def draw_particles():
     for particles in particle_manager.particle_systems:
+        new_ball_img= BALL_IMG.copy()
+        new_ball_img.set_alpha((1-particles.elapsed_ratio())*100)
+        BALL= pygame.transform.scale(new_ball_img,(particles.radius, particles.radius))
         for particle in particles.particles:
-            pygame.draw.circle(screen,GRAY,particle.position,particle.mass,)
+            screen.blit(BALL,particle.position)
 
 def update(): 
     global time_bar
@@ -159,10 +165,12 @@ def update():
     for mover in movers:
         
         if mover.position.y > HEIGHT- mover.mass:
+            if(mover.velocity.magnitude() < MIN_BOUNCE_SPEED):#Avoid balls from coming to a full stop
+                split_spike(mover)
             mover.velocity.y *= -1
             mover.position.y=  HEIGHT- mover.mass
             bounce.play()
-        elif mover.position.y < mover.mass + spike_length:
+        elif mover.position.y < mover.mass + spike_length+ time_bar_length:
             split_spike(mover)
         
         if mover.position.x > WIDTH- mover.mass:
@@ -171,6 +179,8 @@ def update():
         elif mover.position.x < mover.mass:
             mover.velocity.x *= -1
             mover.position.x = mover.mass
+
+        
 
     #update time bar
     if not game_over:
@@ -237,7 +247,7 @@ def check_chain_collisions():
                     added_movers.append(balls[1])
                 else:
                     #add particles 
-                    particles= Particles(2,mover.position, mover.momentum()+ chain.momentum())
+                    particles= Particles(1.5,mover.position, mover.momentum()+ chain.momentum())
                     particle_manager.add_particles(particles)
                     pygame.mixer.Sound.play(pop2)
                 removed_movers.append(mover)
@@ -253,7 +263,7 @@ def check_chain_collisions():
                         added_movers.append(balls[1])
                     else:
                         #add particles 
-                        particles= Particles(2,mover.position,mover.momentum()+ chain.momentum())
+                        particles= Particles(1.5,mover.position,mover.momentum()+ chain.momentum())
                         particle_manager.add_particles(particles)
                         pygame.mixer.Sound.play(pop2)
                     removed_movers.append(mover)
@@ -287,30 +297,17 @@ def split_ball(mover,chain):
         mover1.velocity= initial_momentum/(2* mover1.mass)
         mover2.velocity= initial_momentum/(2* mover2.mass)
 
+        
         mover1.velocity.x += 1.5
         mover2.velocity.x -= 1.5
 
         return (mover1, mover2)
 
 def split_spike(mover):
-    global new_movers
-    removed_movers= []
-    added_movers=[]
-
-    if mover.mass < 30:
-        removed_movers.append(movers)
-    else:
-        m1= Mover(mover.mass/2,copy.deepcopy(mover.position),Vector2(1,0))
-        m2= Mover(mover.mass/2,copy.deepcopy(mover.position), Vector2(-1,0))
-
-        added_movers.append(m1)        
-        added_movers.append(m2)       
-        removed_movers.append(mover) 
-
-    movers[:]= [x for x in movers if not x in removed_movers]
-
-    for m in added_movers:
-        movers.append(m)
+    movers.remove(mover)
+    pop2.play()
+    particles= Particles(2,mover.position,mover.momentum())
+    particle_manager.add_particles(particles)
 
 def init_game():
     global level

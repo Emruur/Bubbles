@@ -60,7 +60,7 @@ class LevelManager:
         self.levels.append(l4)
         self.total_levels += 1
 
-        l5= Level(5,15)
+        l5= Level(5,17)
         l5.movers.append(Mover(80, Vector2(width/4, 200)))
         l5.movers.append(Mover(80, Vector2(width*2/4, 200)))
         l5.movers.append(Mover(80, Vector2(width*3/4, 200)))
