@@ -10,7 +10,7 @@ from ChainBullet import ChainBullet
 from LevelModule import Level, LevelManager
 from Mover import Mover
 from Shooter import Shooter
-from ParticleSystem import ParticleManager, Particles
+from ParticleSystem import ParticleManager, BubbleParticles, ChainParticles
 
 BLACK = (10, 10, 30)
 GRAY = (80, 80, 100)
@@ -83,11 +83,16 @@ CHAIN=  pygame.transform.scale(
     pygame.image.load(os.path.join("assets","chain.png")),(CHAIN_WIDTH, HEIGHT- time_bar_length)
 )
 
+CHAIN_PARTICLE_IMG= pygame.image.load(os.path.join("assets","chain_particle.png"))
+    
+
+
 pop= pygame.mixer.Sound('assets/pop2.wav')
 pop2= pygame.mixer.Sound('assets/pop.wav')
 game_over_sound2= pygame.mixer.Sound('assets/game_over2.wav')
 chain_sound= pygame.mixer.Sound('assets/chain.wav')
 bounce= pygame.mixer.Sound('assets/bounce.wav')
+chain_breaking= pygame.mixer.Sound('assets/break.wav')
 
 def draw():
     screen.blit(background,(0,0))
@@ -143,11 +148,16 @@ def draw():
 
 def draw_particles():
     for particles in particle_manager.particle_systems:
-        new_ball_img= BALL_IMG.copy()
-        new_ball_img.set_alpha((1-particles.elapsed_ratio())*100)
-        BALL= pygame.transform.scale(new_ball_img,(particles.radius, particles.radius))
+        new_particle_img= None
+        if isinstance(particles, BubbleParticles):
+            new_particle_img= BALL_IMG.copy()
+        else:
+            new_particle_img= CHAIN_PARTICLE_IMG.copy()
+        
+        new_particle_img.set_alpha((1-particles.elapsed_ratio())*100)
+        PARTICLE= pygame.transform.scale(new_particle_img,(particles.radius, particles.radius))
         for particle in particles.particles:
-            screen.blit(BALL,particle.position)
+            screen.blit(PARTICLE,particle.position)
 
 def update(): 
     global time_bar
@@ -219,6 +229,11 @@ def update_chains():
         chain.update()
         if not (chain.anchored and time.time() - chain.anchored_in > chain.anchor_duration):
             chains.append(chain)
+        else:
+            #add chain particles
+            chain_particle_system= ChainParticles(chain.bottom_position,HEIGHT, HEIGHT)
+            particle_manager.add_particle_system(chain_particle_system)
+            chain_breaking.play()
     chain_bullets= chains
 def update_particles():
     for particles in particle_manager.particle_systems:
@@ -247,8 +262,8 @@ def check_chain_collisions():
                     added_movers.append(balls[1])
                 else:
                     #add particles 
-                    particles= Particles(1.5,mover.position, mover.momentum()+ chain.momentum())
-                    particle_manager.add_particles(particles)
+                    particles= BubbleParticles(1.5,mover.position, mover.momentum()+ chain.momentum())
+                    particle_manager.add_particle_system(particles)
                     pygame.mixer.Sound.play(pop2)
                 removed_movers.append(mover)
                 removed_chains.append(chain)
@@ -263,8 +278,8 @@ def check_chain_collisions():
                         added_movers.append(balls[1])
                     else:
                         #add particles 
-                        particles= Particles(1.5,mover.position,mover.momentum()+ chain.momentum())
-                        particle_manager.add_particles(particles)
+                        particles= BubbleParticles(1.5,mover.position,mover.momentum()+ chain.momentum())
+                        particle_manager.add_particle_system(particles)
                         pygame.mixer.Sound.play(pop2)
                     removed_movers.append(mover)
                     removed_chains.append(chain)
@@ -306,8 +321,8 @@ def split_ball(mover,chain):
 def split_spike(mover):
     movers.remove(mover)
     pop2.play()
-    particles= Particles(2,mover.position,mover.momentum())
-    particle_manager.add_particles(particles)
+    particles= BubbleParticles(2,mover.position,mover.momentum())
+    particle_manager.add_particle_system(particles)
 
 def init_game():
     global level

@@ -4,16 +4,31 @@ from Mover import Mover
 from random import randint
 from copy import deepcopy
 
+class ParticleSystem:  #Particle system interface
+    def start(self):
+        self.init_time= time.time()
+
+    def update(self):
+        for particle in self.particles:
+            particle.update()
+    def elapsed_ratio(self):
+        return (time.time()- self.init_time) / self.duration 
+
+    def disappeared(self):
+        return self.elapsed_ratio() > self.threshold
+
 
 class ParticleManager:
 
     def __init__(self) ->None:
         self.particle_systems= []
 
-    def add_particles(self,particles):
+    def add_particle_system(self,particles):
         self.particle_systems.append(particles)
 
-class Particles:
+    
+
+class BubbleParticles(ParticleSystem):
     def __init__(self, duration, position, momentum) -> None:
         self.particles= []
         self.duration= duration
@@ -36,18 +51,28 @@ class Particles:
             self.particles.append(m1)
             self.particles.append(m2)
 
-        for particle in self.particles:
-            print(particle.position, particle.velocity)
 
         self.start()
-            
-    def start(self):
-        self.init_time= time.time()
     
-        
-    def elapsed_ratio(self):
-        return (time.time()- self.init_time) / self.duration 
+    
+class ChainParticles(ParticleSystem):
+    def __init__(self, position, height,win_height) -> None:
+        self.particles= []
+        self.duration = 0.5
+        self.position= position
+        self.threshold= 1
+        self.radius= 25
 
-    def disappeared(self):
-        return self.elapsed_ratio() > self.threshold
-    
+        particle_period= 40
+        particle_amount= int(height/particle_period)
+        x= position.x
+        particle_mass= 10
+        for i in range(0,particle_amount):
+            particle= Mover(particle_mass,Vector2(x,win_height-height*(i/particle_amount)),Vector2(float(randint(-1,1)/3),0))
+            print("a: ",height*(i/particle_amount))
+            self.particles.append(particle)
+
+        self.start()
+        
+
+
