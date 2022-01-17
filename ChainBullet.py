@@ -9,7 +9,7 @@ class ChainBullet:
         self.top_position= copy.deepcopy(bottom_position)
         self.anchored= False
         self.anchored_in= None
-        self.anchor_duration= 0.2
+        self.anchor_duration= 0.5
         self.mass= mass
     
     def update(self):

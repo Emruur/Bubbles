@@ -1,15 +1,15 @@
-from LevelModule import LevelManager, Level
+import copy
+import time
+import os
+
 import pygame
 from pygame import Vector2
 from pygame.constants import K_LEFT, K_RIGHT, K_r
 
-
-import copy
-import time
-
+from ChainBullet import ChainBullet
+from LevelModule import Level, LevelManager
 from Mover import Mover
 from Shooter import Shooter
-from ChainBullet import ChainBullet
 
 BLACK = (10, 10, 30)
 GRAY = (80, 80, 100)
@@ -17,7 +17,9 @@ WHITE = (230, 230,200)
 RED= (200,30,30)
 BLUE= (40,40,100)
 GREEN= (40,80,60)
-YELLOW= (40,150,150)
+YELLOW= (250,250,0)
+
+pygame.init()
 
 WIDTH,HEIGHT= 1000, 600
 screen = pygame.display.set_mode((WIDTH,HEIGHT))
@@ -27,6 +29,15 @@ pygame.display.set_caption('Bouncing ball')
 pygame.font.init()
 GAME_OVER_FONT_1= pygame.font.SysFont("comicsans", 120)
 GAME_OVER_FONT_2= pygame.font.SysFont("comicsans", 60)
+
+background= pygame.transform.scale(
+    pygame.image.load(os.path.join("assets","background2.png")),(WIDTH,HEIGHT))
+
+BALL_IMG= pygame.image.load(
+    os.path.join("assets","ball4.png"))
+    
+SHOOTER_IMG= pygame.image.load(
+    os.path.join("assets","shooter.png"))
 
 FPS= 60
 clock= pygame.time.Clock()
@@ -41,31 +52,60 @@ timeout= False
 #Initialize game variables
 gravity = Vector2(0,10)
 movers= []
-shooter= Shooter(Vector2(0,0),25,0.6)
+shooter= Shooter(Vector2(0,0),30,0.6)
 chain_bullets= []
 
-spike_length= 30
+spike_length= 40
 time_bar_length= 20
 spike= pygame.Rect(0,time_bar_length,WIDTH, spike_length)
 time_bar= pygame.Rect(0,0,1,time_bar_length)
+tb_back= pygame.Rect(0,0,WIDTH,time_bar_length)
 
-level_manager= LevelManager(WIDTH,HEIGHT)
+level_manager= LevelManager(WIDTH,HEIGHT,shooter.radius)
 level= None
 
+SPIKE= pygame.transform.scale(
+    pygame.image.load(os.path.join("assets","spike2.png")),(spike_length*2, spike_length*2)
+)
+
+SHOOTER= pygame.transform.scale(
+    pygame.image.load(os.path.join("assets","shooter.png")),(shooter.radius*2, shooter.radius*2)
+)
+
+CHAIN_WIDTH= 25
+CHAIN=  pygame.transform.scale(
+    pygame.image.load(os.path.join("assets","chain.png")),(CHAIN_WIDTH, HEIGHT- time_bar_length)
+)
+
+pop= pygame.mixer.Sound('assets/pop2.wav')
+pop2= pygame.mixer.Sound('assets/pop.wav')
+game_over_sound= pygame.mixer.Sound('assets/game_over.wav')
+game_over_sound2= pygame.mixer.Sound('assets/game_over2.wav')
+
 def draw():
-    screen.fill(GREEN)
+    screen.blit(background,(0,0))
     #draw time bar
+    pygame.draw.rect(screen,GRAY,tb_back)
     pygame.draw.rect(screen, YELLOW, time_bar)
     
     for chain in chain_bullets:
-        pygame.draw.line(screen,RED,chain.bottom_position,chain.top_position, 3)
+        screen.blit(CHAIN,(chain.top_position.x- CHAIN_WIDTH/2, chain.top_position.y))
 
-    pygame.draw.circle(screen, WHITE, shooter.position, shooter.radius)
+    
+    screen.blit(SHOOTER,(shooter.position.x - shooter.radius, shooter.position.y - shooter.radius))
 
     for mover in movers:
-        pygame.draw.circle(screen,BLACK,mover.position, mover.mass)
+        BALL= pygame.transform.scale(BALL_IMG, (mover.mass*2,mover.mass*2))
+            
+        screen.blit(BALL, (mover.position.x- mover.mass,mover.position.y- mover.mass))
+        #pygame.draw.circle(screen,BLACK,mover.position, mover.mass)
 
-    pygame.draw.rect(screen ,BLUE, spike)
+    
+    #pygame.draw.rect(screen ,BLUE, spike)
+    spike_x_pos= 0
+    while(spike_x_pos< WIDTH):
+        screen.blit(SPIKE,(spike_x_pos,time_bar_length))
+        spike_x_pos+= spike_length*2
 
     if game_over:
         game_over_text= GAME_OVER_FONT_1.render("GAME OVER", 1, WHITE)
@@ -123,6 +163,7 @@ def update():
         time_bar.width= WIDTH* level.elapsed()
 
     if level.lost() and not game_over:
+        pygame.mixer.Sound.play(game_over_sound2)
         timeout= True
         pygame.event.post(pygame.event.Event(GAME_OVER_EVENT))
         
@@ -166,18 +207,26 @@ def check_chain_collisions():
             if distance_vector.magnitude()< mover.mass:
                 balls=split_ball(mover,chain)
                 if balls:
+                    pygame.mixer.Sound.play(pop)
                     added_movers.append(balls[0])
                     added_movers.append(balls[1])
+                else:
+                    pygame.mixer.Sound.play(pop2)
                 removed_movers.append(mover)
                 removed_chains.append(chain)
+                
             elif abs(chain.top_position.x- mover.position.x)< mover.mass:
                 if chain.top_position.y < mover.position.y:
                     balls= split_ball(mover,chain)
                     if balls:
+                        pygame.mixer.Sound.play(pop)
                         added_movers.append(balls[0])
                         added_movers.append(balls[1])
+                    else:
+                        pygame.mixer.Sound.play(pop2)
                     removed_movers.append(mover)
                     removed_chains.append(chain)
+
     
     chain_bullets[:]= [x for x in chain_bullets if not x in removed_chains]
     movers[:]= [x for x in movers if not x in removed_movers]
@@ -189,7 +238,8 @@ def check_chain_collisions():
 def check_game_over():
     for mover in movers:
         distance_vector= mover.position - shooter.position
-        if distance_vector.magnitude() < shooter.radius + mover.mass:
+        if distance_vector.magnitude() < shooter.radius + mover.mass and not game_over:
+            pygame.mixer.Sound.play(game_over_sound)
             pygame.event.post(pygame.event.Event(GAME_OVER_EVENT))
 
 def split_ball(mover,chain):
@@ -279,6 +329,7 @@ while 1:
         if event.type == pygame.QUIT:
             pygame.quit()
         if event.type == GAME_OVER_EVENT:
+            
             game_over= True
         if event.type == pygame.KEYDOWN:
             if not level_beginning_state:
