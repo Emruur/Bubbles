@@ -51,7 +51,7 @@ finished= False
 timeout= False
 
 #Initialize game variables
-gravity = Vector2(0,10)
+gravity = Vector2(0,0.3)
 movers= []
 shooter= Shooter(Vector2(0,0),30,0.6)
 chain_bullets= []
@@ -210,7 +210,7 @@ def check_chain_bounds():
 
 def update_balls():
     for mover in movers:
-        mover.applyForce(gravity)
+        mover.applyForce(gravity* mover.mass)
         mover.update()
 def update_chains():
     global chain_bullets
@@ -226,7 +226,7 @@ def update_particles():
             particle_manager.particle_systems.remove(particles)
         else:
             for particle in particles.particles:
-                particle.applyForce(gravity/2)
+                particle.applyForce(gravity*particle.mass*2)
                 particle.update()
 
 def check_chain_collisions():
