@@ -8,8 +8,9 @@ class ParticleSystem:  #Particle system interface
     def start(self):
         self.init_time= time.time()
 
-    def update(self):
+    def update_system(self,g):
         for particle in self.particles:
+            particle.applyForce(g*particle.mass)
             particle.update()
     def elapsed_ratio(self):
         return (time.time()- self.init_time) / self.duration 
@@ -30,6 +31,7 @@ class ParticleManager:
 
 class BubbleParticles(ParticleSystem):
     def __init__(self, duration, position, momentum) -> None:
+        super().__init__()
         self.particles= []
         self.duration= duration
         self.threshold= 0.7
@@ -57,6 +59,7 @@ class BubbleParticles(ParticleSystem):
     
 class ChainParticles(ParticleSystem):
     def __init__(self, position, height,win_height) -> None:
+        super().__init__()
         self.particles= []
         self.duration = 0.5
         self.position= position
@@ -69,8 +72,34 @@ class ChainParticles(ParticleSystem):
         particle_mass= 10
         for i in range(0,particle_amount):
             particle= Mover(particle_mass,Vector2(x,win_height-height*(i/particle_amount)),Vector2(float(randint(-1,1)/3),0))
-            print("a: ",height*(i/particle_amount))
             self.particles.append(particle)
+
+        self.start()
+
+class ShooterParticles(ParticleSystem):
+
+    def __init__(self,position, sh_radius) -> None:
+        super().__init__()
+        self.particles= []
+        self.duration = 2
+        self.threshold= 1
+        self.radius= 25
+
+        particle_amount= 20
+
+        direction= Vector2(1,0)
+        for i in range(0,particle_amount):
+            direction= direction.rotate(360*(i/particle_amount))
+            particle_position1= direction* sh_radius/3
+            particle_position2= direction* sh_radius*2/3
+            particle_position3= direction*sh_radius
+
+            print(particle_position1,particle_position2,particle_position3)
+
+            self.particles.append(Mover(10,particle_position1+ deepcopy(position)))
+            self.particles.append(Mover(10,particle_position2+ deepcopy(position)))
+            self.particles.append(Mover(10,particle_position3+ deepcopy(position)))
+
 
         self.start()
         

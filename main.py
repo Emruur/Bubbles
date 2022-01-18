@@ -10,7 +10,7 @@ from ChainBullet import ChainBullet
 from LevelModule import Level, LevelManager
 from Mover import Mover
 from Shooter import Shooter
-from ParticleSystem import ParticleManager, BubbleParticles, ChainParticles
+from ParticleSystem import ParticleManager, BubbleParticles, ChainParticles, ShooterParticles
 
 BLACK = (10, 10, 30)
 GRAY = (80, 80, 100)
@@ -86,7 +86,7 @@ CHAIN=  pygame.transform.scale(
 CHAIN_PARTICLE_IMG= pygame.image.load(os.path.join("assets","chain_particle.png"))
     
 
-
+#load sound effects
 pop= pygame.mixer.Sound('assets/pop2.wav')
 pop2= pygame.mixer.Sound('assets/pop.wav')
 game_over_sound2= pygame.mixer.Sound('assets/game_over2.wav')
@@ -151,7 +151,7 @@ def draw_particles():
         new_particle_img= None
         if isinstance(particles, BubbleParticles):
             new_particle_img= BALL_IMG.copy()
-        else:
+        elif isinstance(particles, ChainParticles):
             new_particle_img= CHAIN_PARTICLE_IMG.copy()
         
         new_particle_img.set_alpha((1-particles.elapsed_ratio())*100)
@@ -240,9 +240,7 @@ def update_particles():
         if particles.disappeared():
             particle_manager.particle_systems.remove(particles)
         else:
-            for particle in particles.particles:
-                particle.applyForce(gravity*particle.mass*2)
-                particle.update()
+            particles.update_system(gravity*1.7)
 
 def check_chain_collisions():
     global chain_bullets
@@ -298,6 +296,7 @@ def check_game_over():
         distance_vector= mover.position - shooter.position
         if distance_vector.magnitude() < shooter.radius + mover.mass and not game_over:
             pygame.mixer.Sound.play(game_over_sound2)
+            
             pygame.event.post(pygame.event.Event(GAME_OVER_EVENT))
 
 def split_ball(mover,chain):
@@ -398,7 +397,8 @@ while 1:
         timeout= False
     
     if not level_beginning_state:
-        update()
+        if not game_over:
+            update()
     else:
         update_particles()
 
