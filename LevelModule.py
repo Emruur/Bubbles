@@ -31,7 +31,7 @@ class LevelManager:
     def __init__(self, width,height,shooter_radius) -> None:
         self.levels= []
         self.total_levels= 0
-        self.current_level= 0
+        self.current_level= 5
 
         l1= Level(1,20)
         l1.movers.append(Mover(80,Vector2(width/2, 300)))
@@ -66,6 +66,22 @@ class LevelManager:
         l5.movers.append(Mover(80, Vector2(width*3/4, 200)))
         l5.shooter_location= Vector2(width/2, height-shooter_radius)
         self.levels.append(l5)
+        self.total_levels += 1
+
+        l6= Level(6,10)
+        l6.movers.append(Mover(40, Vector2(width/5, 120)))
+        l6.movers.append(Mover(40, Vector2(width*2/5, 120)))
+        l6.movers.append(Mover(40, Vector2(width*3/5, 120)))
+        l6.movers.append(Mover(40, Vector2(width*4/5, 120)))
+        l6.shooter_location= Vector2(width/5, height-shooter_radius)
+        self.levels.append(l6)
+        self.total_levels += 1
+
+        l7= Level(7,15)
+        l7.movers.append(Mover(40, Vector2(width/3,300),Vector2(20,0)))
+        l7.movers.append(Mover(40, Vector2(width*2/3,350),Vector2(-20,0)))
+        l7.shooter_location= Vector2(width/5, height-shooter_radius)
+        self.levels.append(l7)
         self.total_levels += 1
 
 

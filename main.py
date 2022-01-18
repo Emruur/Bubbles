@@ -327,7 +327,7 @@ def init_game():
     global level
     global level_beginning_state
     global time_bar
-    level_manager.reset()
+    #level_manager.reset()
     level= level_manager.load_level()
     shooter.position= copy.deepcopy(level.shooter_location)
 
@@ -373,7 +373,7 @@ while 1:
         if event.type == pygame.QUIT:
             pygame.quit()
         if event.type == GAME_OVER_EVENT:
-            
+            chain_sound.stop()
             game_over= True
         if event.type == pygame.KEYDOWN:
             if not level_beginning_state:
