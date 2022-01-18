@@ -51,7 +51,7 @@ finished= False
 timeout= False
 
 #Initialize game variables
-gravity = Vector2(0,0.3)
+gravity = Vector2(0,0.25)
 movers= []
 shooter= Shooter(Vector2(0,0),30,0.6)
 chain_bullets= []
@@ -68,7 +68,7 @@ level= None
 particle_manager= ParticleManager()
 
 #Avoid balls from stopping ( avoid automatic lose for the player)
-MIN_BOUNCE_SPEED= 5
+MIN_BOUNCE_SPEED= 7
 
 SPIKE= pygame.transform.scale(
     pygame.image.load(os.path.join("assets","spike2.png")),(spike_length*2, spike_length*2)
@@ -252,7 +252,7 @@ def check_chain_collisions():
     for chain in chain_bullets:
         for mover in movers:
             distance_vector= mover.position - chain.top_position
-            if distance_vector.magnitude()< mover.mass:
+            if distance_vector.magnitude()< mover.mass + chain.width:
                 balls=split_ball(mover,chain)
                 if balls:
                     pygame.mixer.Sound.play(pop)
@@ -267,7 +267,7 @@ def check_chain_collisions():
                 removed_chains.append(chain)
                 chain_sound.stop()
                 
-            elif abs(chain.top_position.x- mover.position.x)< mover.mass:
+            elif abs(chain.top_position.x- mover.position.x)< mover.mass + chain.width:
                 if chain.top_position.y < mover.position.y:
                     balls= split_ball(mover,chain)
                     if balls:
